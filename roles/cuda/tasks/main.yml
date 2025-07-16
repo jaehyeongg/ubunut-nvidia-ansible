@@ -1,0 +1,42 @@
+---
+- name: Ensure CUDA installer is present
+  get_url:
+    url: https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda_12.4.0_550.54.14_linux.run
+    dest: /tmp/cuda_12.4.0_550.54.14_linux.run
+    mode: '0755'
+
+- name: Install CUDA Toolkit (without driver)
+  shell: >
+    sh /tmp/cuda_12.4.0_550.54.14_linux.run --silent --toolkit
+  args:
+    creates: /usr/local/cuda-12.4
+
+- name: Add CUDA to PATH
+  lineinfile:
+    path: /root/.bashrc
+    line: 'export PATH=/usr/local/cuda-12.4/bin:$PATH'
+    create: yes
+    mode: '0755'
+
+- name: Add CUDA to LD_LIBRARY_PATH
+  lineinfile:
+    path: /root/.bashrc
+    line: 'export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH'
+    insertafter: EOF
+
+- name: Add CUDA to extras LD_LIBRARY_PATH
+  lineinfile:
+    path: /root/.bashrc
+    line: 'export LD_LIBRARY_PATH=/usr/local/cuda-12.4/extras/CUPTI/lib64:$LD_LIBRARY_PATH'
+    insertafter: EOF
+- name: Source .bashrc temporarily (Bash로 실행)
+  shell: source /root/.bashrc && echo "Sourced!"
+  args:
+    executable: /bin/bash
+  register: source_result
+  ignore_errors: true
+
+#- name: Source CUDA environment
+# shell: source /root/.bashrc
+# ignore_errors: yes
+

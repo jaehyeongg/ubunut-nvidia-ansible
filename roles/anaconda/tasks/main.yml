@@ -1,0 +1,31 @@
+# tasks file for roles/anaconda
+# tasks file for anaconda
+- name: Check if Anaconda is already installed
+  stat:
+    path: "{{ anaconda_install_path }}/bin/conda"
+  register: conda_stat
+
+- when: not conda_stat.stat.exists
+  block:
+    - name: Download the Anaconda installer
+      ansible.builtin.get_url:
+        url: "{{ anaconda_installer_url }}"
+        dest: "/tmp/anaconda_installer.sh"
+        mode: '0755'
+
+    - name: Run the Anaconda installer
+      ansible.builtin.shell:
+        # -b: 배치 모드로 사용자 입력 없이 설치
+        # -p: 설치 경로 지정
+        cmd: "/tmp/anaconda_installer.sh -b -p {{ anaconda_install_path }}"
+
+    - name: Set system-wide PATH for all users
+      ansible.builtin.copy:
+        dest: /etc/profile.d/anaconda.sh
+        content: 'export PATH={{ anaconda_install_path }}/bin:$PATH'
+        mode: '0644'
+
+#   - name: Clean up the installer file
+#     ansible.builtin.file:
+#       path: "/tmp/anaconda_installer.sh"
+#       state: absent

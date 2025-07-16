@@ -1,0 +1,5 @@
+# 각 역할(role)의 files 디렉토리 내용 전체를 무시
+roles/*/files/
+
+# Ansible 재시도 파일 무시
+*.retry

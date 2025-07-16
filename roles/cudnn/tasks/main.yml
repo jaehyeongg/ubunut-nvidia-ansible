@@ -1,0 +1,51 @@
+---
+# tasks file for roles/cudnn
+- name: Check if cuDNN is already installed
+  stat:
+    path: "{{ cuda_path }}/include/cudnn.h"
+  register: cudnn_header
+
+- when: not cudnn_header.stat.exists
+  block:
+    - name: Copy cuDNN archive to the remote server
+      ansible.builtin.copy:
+        src: "{{ cudnn_archive_file }}"
+        dest: "/tmp/{{ cudnn_archive_file }}"
+
+    - name: Unarchive cuDNN
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ cudnn_archive_file }}"
+        dest: "/tmp"
+        remote_src: yes # 서버에 있는 파일을 압축 해제
+
+    - name: Copy cuDNN files to CUDA directory
+      ansible.builtin.copy:
+        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/include/cudnn.h"
+        dest: "{{ cuda_path }}/include/cudnn.h"
+        remote_src: yes # 서버에 있는 파일을 복사
+        mode: '0644'
+
+    - name: Copy cuDNN files to CUDA directory
+      ansible.builtin.copy:
+        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/include/cudnn_version.h"
+        dest: "{{ cuda_path }}/include/cudnn_version.h"
+        remote_src: yes # 서버에 있는 파일을 복사
+        mode: '0644'
+
+
+    - name: Copy cuDNN library files
+      ansible.posix.synchronize:
+        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/lib/"
+        dest: "{{ cuda_path }}/lib64/"
+        # rsync의 --copy-links 옵션과 유사
+        copy_links: yes
+      delegate_to: "{{ inventory_hostname }}"
+
+ #   - name: Clean up temporary files
+  #    ansible.builtin.file:
+  #      path: "{{ item }}"
+  #      state: absent
+  #    with_items:
+  #      - "/tmp/{{ cudnn_archive_file }}"
+  #      - "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}"
+

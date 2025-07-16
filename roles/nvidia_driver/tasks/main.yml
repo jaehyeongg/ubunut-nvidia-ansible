@@ -1,0 +1,7 @@
+# tasks file for roles/nvidia_driver
+- name: nvidia install
+  apt:
+    name:
+      - nvidia-driver-550
+    state: present
+
