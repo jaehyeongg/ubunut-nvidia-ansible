@@ -1,7 +1,5 @@
-# tasks file for roles/nvidia_driver
-- name: nvidia install
-  apt:
-    name:
-      - nvidia-driver-550
+- name: Install the specified NVIDIA driver via apt
+  ansible.builtin.apt:
+    name: "nvidia-driver-{{ nvidia_driver_version_short }}"
     state: present
-
+    update_cache: yes

@@ -1,0 +1,40 @@
+---
+# ==========================================================
+#             사용자 설정 영역 (이곳만 수정하세요)
+# ==========================================================
+
+# 1. NVIDIA 드라이버 버전 (apt)
+nvidia_driver_version_short: "550"
+
+# 2. CUDA Toolkit 버전 (wget)
+cuda_version: "12.4"
+
+# 3. cuDNN 버전 (파일 선택용)
+cudnn_version: "8.7.0"
+
+# 4. Anaconda 설치 파일명 (files/)
+anaconda_installer_file: "Anaconda3-2025.06-0-Linux-x86_64.sh"
+
+
+# ==========================================================
+#               데이터 및 로직 영역 (수정 불필요)
+# ==========================================================
+
+# CUDA 버전에 따른 다운로드 URL 자동 생성
+cuda_url_map:
+  "12.4": "https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda_12.4.0_550.54.14_linux.run"
+  "11.8": "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_520.61.05_linux.run"
+
+# CUDA와 cuDNN 버전 조합에 따른 실제 파일명 맵
+cudnn_file_map:
+  # CUDA 12.4.0 일 때
+  "12.4":
+    "8.9.0": "cudnn-linux-x86_64-8.9.0.131_cuda12-archive.tar.xz"
+    "8.7.0": "cudnn-linux-x86_64-8.7.0.84_cuda12-archive.tar.xz" # 예시
+  # CUDA 11.8.0 일 때
+  "11.8":
+    "8.7.0": "cudnn-linux-x86_64-8.7.0.84_cuda11-archive.tar.xz"
+
+# --- 공통 경로 변수 ---
+cuda_path: "/usr/local/cuda"
+anaconda_install_path: "/opt/anaconda3"

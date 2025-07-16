@@ -1,4 +1,9 @@
 ---
+- name: Find the correct cuDNN file to install
+  set_fact:
+    # cudnn_file_map에서 [cuda버전][cudnn버전] 키로 실제 파일명을 찾음
+    cudnn_archive_file_to_install: "{{ cudnn_file_map[cuda_version][cudnn_version] }}"
+
 # tasks file for roles/cudnn
 - name: Check if cuDNN is already installed
   stat:
@@ -9,25 +14,25 @@
   block:
     - name: Copy cuDNN archive to the remote server
       ansible.builtin.copy:
-        src: "{{ cudnn_archive_file }}"
-        dest: "/tmp/{{ cudnn_archive_file }}"
+        src: "{{ cudnn_archive_file_to_install }}"
+        dest: "/tmp/{{ cudnn_archive_file_to_install }}"
 
     - name: Unarchive cuDNN
       ansible.builtin.unarchive:
-        src: "/tmp/{{ cudnn_archive_file }}"
+        src: "/tmp/{{ cudnn_archive_file_to_install }}"
         dest: "/tmp"
         remote_src: yes # 서버에 있는 파일을 압축 해제
 
     - name: Copy cuDNN files to CUDA directory
       ansible.builtin.copy:
-        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/include/cudnn.h"
+        src: "/tmp/{{ cudnn_archive_file_to_install | replace('.tar.xz', '') }}/include/cudnn.h"
         dest: "{{ cuda_path }}/include/cudnn.h"
         remote_src: yes # 서버에 있는 파일을 복사
         mode: '0644'
 
     - name: Copy cuDNN files to CUDA directory
       ansible.builtin.copy:
-        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/include/cudnn_version.h"
+        src: "/tmp/{{ cudnn_archive_file_to_install | replace('.tar.xz', '') }}/include/cudnn_version.h"
         dest: "{{ cuda_path }}/include/cudnn_version.h"
         remote_src: yes # 서버에 있는 파일을 복사
         mode: '0644'
@@ -35,17 +40,37 @@
 
     - name: Copy cuDNN library files
       ansible.posix.synchronize:
-        src: "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}/lib/"
+        src: "/tmp/{{ cudnn_archive_file_to_install | replace('.tar.xz', '') }}/lib/"
         dest: "{{ cuda_path }}/lib64/"
         # rsync의 --copy-links 옵션과 유사
         copy_links: yes
       delegate_to: "{{ inventory_hostname }}"
+    - name: Extract cuDNN version from filename for symlinks
+      set_fact:
+        cudnn_full_version: "{{ cudnn_archive_file_to_install | regex_search('(\\d+\\.\\d+\\.\\d+\\.\\d+)') }}"
+
+    - name: Create cuDNN library symlinks
+      ansible.builtin.file:
+        src: "{{ cuda_path }}/lib/{{ item }}.so.{{ cudnn_full_version }}"
+        dest: "{{ cuda_path }}/lib/{{ item }}.so.{{ cudnn_full_version.split('.')[0] }}"
+        state: link
+        force: yes
+      loop:
+        - libcudnn_adv_train
+        - libcudnn_ops_infer
+        - libcudnn_cnn_train
+        - libcudnn_adv_infer
+        - libcudnn_ops_train
+        - libcudnn_cnn_infer
+        - libcudnn
+      when: cudnn_full_version is defined
+
 
  #   - name: Clean up temporary files
   #    ansible.builtin.file:
   #      path: "{{ item }}"
   #      state: absent
   #    with_items:
-  #      - "/tmp/{{ cudnn_archive_file }}"
-  #      - "/tmp/{{ cudnn_archive_file | replace('.tar.xz', '') }}"
+  #      - "/tmp/{{ cudnn_archive_file_to_install }}"
+  #      - "/tmp/{{ cudnn_archive_file_to_install | replace('.tar.xz', '') }}"
 
